@@ -1,0 +1,35 @@
+---
+---
+<div class="fixed bottom-6 right-6 z-50">
+  <button 
+    id="musicBtn" 
+    class="bg-white/80 backdrop-blur-md border border-stone-200 text-stone-700 px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 text-xs font-semibold hover:bg-stone-50 transition-all duration-300"
+  >
+    <span id="icon">🎵</span>
+    <span id="text">Escuchar música de fondo</span>
+  </button>
+  <audio id="bgAudio" src="/audio/musica-suave.mp3" loop></audio>
+</div>
+
+<script>
+  const button = document.getElementById('musicBtn');
+  const audio = document.getElementById('bgAudio') as HTMLAudioElement;
+  const icon = document.getElementById('icon');
+  const text = document.getElementById('text');
+  let isPlaying = false;
+
+  button?.addEventListener('click', () => {
+    if (!audio) return;
+    
+    if (isPlaying) {
+      audio.pause();
+      if (icon) icon.innerText = "🎵";
+      if (text) text.innerText = "Escuchar música de fondo";
+    } else {
+      audio.play();
+      if (icon) icon.innerText = "⏸️";
+      if (text) text.innerText = "Pausar música";
+    }
+    isPlaying = !isPlaying;
+  });
+</script>

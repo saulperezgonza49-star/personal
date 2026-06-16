@@ -1,0 +1,81 @@
+---
+import MemoryCard from './MemoryCard.astro';
+
+// 1. Organizamos los recuerdos por mascota usando una propiedad "pet"
+const allMemories = [
+  // --- MASCOTA 1 (El gatito que acaba de partir) ---
+  {
+    pet: "gatito-principal",
+    title: "El día que llegó a casa",
+    date: "Marzo 2021",
+    description: "Tan chiquito que cabía en la palma de una mano. Se escondió detrás del sillón las primeras dos horas, pero en cuanto le diste comida no se separó de ti.",
+    image: "/images/gatito1_1.jpg"
+  },
+  {
+    pet: "gatito-principal",
+    title: "Su lugar favorito para dormir",
+    date: "Siempre",
+    description: "No importaba cuántas camas caras le compraras, su lugar favorito siempre fue encima de tus apuntes o en tu pecho.",
+    image: "/images/gatito1_2.jpg"
+  },
+
+  // --- MASCOTA 2 ---
+  {
+    pet: "mascota-2",
+    title: "Su primer paseo juntos",
+    date: "Enero 2022",
+    description: "Estaba tan emocionado que no dejaba de mover la colita. Esa tarde corriendo por el pasto se quedó grabada para siempre.",
+    image: "/images/mascota2_1.jpg"
+  },
+  {
+    pet: "mascota-2",
+    title: "Compañero de aventuras",
+    date: "Noviembre 2023",
+    description: "Siempre fiel, esperando detrás de la puerta cada vez que regresabas a casa para darte la mejor bienvenida del mundo.",
+    image: "/images/mascota2_2.jpg"
+  },
+
+  // --- MASCOTA 3 ---
+  {
+    pet: "mascota-3",
+    title: "La travesura inolvidable",
+    date: "Julio 2023",
+    description: "Esa vez que encontramos la sala llena de hilos o cuando se robó la comida de la mesa con total discreción. Imposible enojarse con esa carita.",
+    image: "/images/mascota3_1.jpg"
+  }
+];
+
+// 2. Agrupamos las mascotas para renderizar las secciones dinámicamente
+const pets = [
+  { id: "gatito-principal", name: "Recuerdos de [Nombre Gatito 🕊️]", desc: "El cielo tiene una estrella más que nunca dejará de brillar." },
+  { id: "mascota-2", name: "Recuerdos de [Nombre Mascota 2]", desc: "Tu lealtad y alegría que nos llenan la vida todos los días." },
+  { id: "mascota-3", name: "Recuerdos de [Nombre Mascota 3]", desc: "Cada travesura y cada momento tierno que guardamos en el corazón." }
+];
+---
+
+<div class="max-w-5xl mx-auto px-4 py-12">
+  {pets.map((pet) => {
+    // Filtramos los recuerdos que le pertenecen a esta mascota en específico
+    const petMemories = allMemories.filter(m => m.pet === pet.id);
+    
+    return (
+      <section class="mb-20 scroll-mt-10" id={pet.id}>
+        <div class="text-center mb-10">
+          <h2 class="text-3xl font-bold text-stone-800">{pet.name}</h2>
+          <p class="text-stone-500 max-w-md mx-auto mt-2 text-sm italic">{pet.desc}</p>
+          <div class="w-16 h-0.5 bg-amber-200 mx-auto mt-4 rounded-full"></div>
+        </div>
+
+        {petMemories.length > 0 ? (
+          <div class="grid md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {petMemories.map((memory) => (
+              <MemoryCard {...memory} />
+            ))}
+          </div>
+        ) : (
+          <p class="text-center text-stone-400 text-sm italic">Pronto agregaremos más momentos aquí...</p>
+        )}
+      </section>
+    );
+  })}
+</div>
