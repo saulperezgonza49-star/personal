@@ -1,35 +1,143 @@
 ---
+// Componente de Reproductor de Música Flotante de Spotify (Soporta links intl-es)
 ---
-<div class="fixed bottom-6 right-6 z-50">
-  <button 
-    id="musicBtn" 
-    class="bg-white/80 backdrop-blur-md border border-stone-200 text-stone-700 px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 text-xs font-semibold hover:bg-stone-50 transition-all duration-300"
+
+<div class="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
+  <!-- Ventana emergente para pegar el enlace de Spotify -->
+  <div
+    id="music-popover"
+    class="hidden bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl border border-amber-200/80 w-72 sm:w-80 transition-all duration-200 animate-in fade-in slide-in-from-bottom-2"
   >
-    <span id="icon">🎵</span>
-    <span id="text">Escuchar música de fondo</span>
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+        <span class="text-emerald-500 text-sm">🟢</span> Música de Spotify
+      </span>
+      <button
+        id="close-popover-btn"
+        class="text-stone-400 hover:text-stone-600 text-xs px-1.5 py-0.5 rounded-full cursor-pointer"
+      >
+        ✕
+      </button>
+    </div>
+
+    <p class="text-stone-500 text-[11px] leading-relaxed mb-3">
+      Pega un enlace de tu canción o lista favorita de <strong>Spotify</strong> para
+      escucharla mientras visitas la página:
+    </p>
+
+    <!-- Formulario de enlace de Spotify -->
+    <div class="flex gap-2 mb-3">
+      <input
+        type="text"
+        id="spotify-url-input"
+        placeholder="https://open.spotify.com/..."
+        class="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 bg-white"
+      />
+      <button
+        id="apply-spotify-btn"
+        class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3.5 py-2 rounded-xl font-medium transition-all active:scale-95 flex-shrink-0 cursor-pointer shadow-xs"
+      >
+        Poner
+      </button>
+    </div>
+
+    <!-- Contenedor del reproductor Iframe de Spotify -->
+    <div
+      id="spotify-player-container"
+      class="rounded-2xl overflow-hidden hidden border border-stone-100 shadow-sm mt-2"
+    >
+      <iframe
+        id="spotify-iframe"
+        class="w-full h-[152px] rounded-2xl border-0"
+        src=""
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+        loading="lazy"></iframe>
+    </div>
+  </div>
+
+  <!-- Botón Flotante Principal -->
+  <button
+    id="music-toggle-btn"
+    class="bg-white/90 backdrop-blur-md hover:bg-emerald-50/60 text-stone-700 border border-emerald-200/60 px-4 py-2.5 rounded-full shadow-lg transition-all duration-300 flex items-center gap-2 text-xs sm:text-sm font-medium cursor-pointer active:scale-95 group"
+    title="Poner canción de Spotify"
+  >
+    <span
+      id="music-icon"
+      class="text-base group-hover:scale-110 transition-transform">🎧</span
+    >
+    <span id="music-text">Elegir música de Spotify</span>
   </button>
-  <audio id="bgAudio" src="/audio/musica-suave.mp3" loop></audio>
 </div>
 
 <script>
-  const button = document.getElementById('musicBtn');
-  const audio = document.getElementById('bgAudio') as HTMLAudioElement;
-  const icon = document.getElementById('icon');
-  const text = document.getElementById('text');
-  let isPlaying = false;
+  window.addEventListener("DOMContentLoaded", () => {
+    const musicBtn = document.getElementById("music-toggle-btn");
+    const musicPopover = document.getElementById("music-popover");
+    const closePopoverBtn = document.getElementById("close-popover-btn");
+    const urlInput = document.getElementById(
+      "spotify-url-input",
+    ) as HTMLInputElement;
+    const applyBtn = document.getElementById("apply-spotify-btn");
+    const playerContainer = document.getElementById("spotify-player-container");
+    const iframe = document.getElementById(
+      "spotify-iframe",
+    ) as HTMLIFrameElement;
+    const musicText = document.getElementById("music-text");
+    const musicIcon = document.getElementById("music-icon");
 
-  button?.addEventListener('click', () => {
-    if (!audio) return;
-    
-    if (isPlaying) {
-      audio.pause();
-      if (icon) icon.innerText = "🎵";
-      if (text) text.innerText = "Escuchar música de fondo";
-    } else {
-      audio.play();
-      if (icon) icon.innerText = "⏸️";
-      if (text) text.innerText = "Pausar música";
+    // Limpia y extrae el tipo (track, playlist, album) y el ID de Spotify correctamente
+    const getSpotifyEmbedUrl = (url: string) => {
+      if (!url || !url.includes("spotify.com")) return "";
+
+      // Si ya viene formateado como embed
+      if (url.includes("open.spotify.com/embed/")) return url;
+
+      // Detecta track, playlist, album o artist e ignora prefijos de idioma como /intl-es/
+      const match = url.match(/(track|playlist|album|artist)\/([a-zA-Z0-9]+)/);
+      if (match && match[1] && match[2]) {
+        const type = match[1];
+        const id = match[2];
+        return `https://open.spotify.com/embed/${type}/${id}?utm_source=generator`;
+      }
+
+      return "";
+    };
+
+    const loadSpotifyTrack = (url: string) => {
+      const embedUrl = getSpotifyEmbedUrl(url);
+      if (embedUrl && iframe && playerContainer) {
+        iframe.src = embedUrl;
+        playerContainer.classList.remove("hidden");
+        if (musicText) musicText.innerText = "Spotify activo 🎶";
+        if (musicIcon) musicIcon.innerText = "🎶";
+        localStorage.setItem("custom_spotify_music", url);
+      } else {
+        alert("Asegúrate de pegar un enlace válido de Spotify 🟢");
+      }
+    };
+
+    // Cargar canción previa si existe
+    const savedUrl = localStorage.getItem("custom_spotify_music");
+    if (savedUrl) {
+      if (urlInput) urlInput.value = savedUrl;
+      loadSpotifyTrack(savedUrl);
     }
-    isPlaying = !isPlaying;
+
+    // Toggle Popover
+    musicBtn?.addEventListener("click", () => {
+      musicPopover?.classList.toggle("hidden");
+    });
+
+    closePopoverBtn?.addEventListener("click", () => {
+      musicPopover?.classList.add("hidden");
+    });
+
+    // Guardar y aplicar
+    applyBtn?.addEventListener("click", () => {
+      const inputUrl = urlInput?.value.trim();
+      if (inputUrl) {
+        loadSpotifyTrack(inputUrl);
+      }
+    });
   });
 </script>

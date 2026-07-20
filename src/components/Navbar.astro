@@ -1,0 +1,18 @@
+---
+import mascotas from '../data/mascotas.json';
+---
+<nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-200/80 px-6 py-4">
+  <div class="max-w-5xl mx-auto flex justify-between items-center">
+    <a href="/" class="font-serif text-lg font-bold text-stone-800 hover:text-amber-700 transition-colors">
+      🤍 Nuestros Compañeros
+    </a>
+    
+    <div class="flex gap-4 md:gap-6 text-sm font-medium text-stone-600">
+      {mascotas.map((mascota) => (
+        <a href={`/mascota/${mascota.id}`} class="hover:text-amber-700 transition-colors">
+          {mascota.navName}
+        </a>
+      ))}
+    </div>
+  </div>
+</nav>

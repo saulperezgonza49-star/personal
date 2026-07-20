@@ -1,0 +1,23 @@
+[
+  {
+    "id": "gatito",
+    "name": "Recuerdos de nuestro compañero 🤍",
+    "navName": "Nuestro Gatito 🕊️",
+    "phrase": "Dejaste huellas de amor en nuestro corazón que el tiempo nunca podrá borrar.",
+    "memories": []
+  },
+  {
+    "id": "mascota-",
+    "name": "Recuerdos de nuestra mascota 🐾",
+    "navName": "Mascota  🐾",
+    "phrase": "Tu lealtad y alegría nos llenan la vida todos los días.",
+    "memories": []
+  },
+  {
+    "id": "mascota",
+    "name": "Recuerdos de nuestra mascota 🐾",
+    "navName": "Mascota 🐾",
+    "phrase": "Cada traveura y cada momento tierno que guardamos en el corazón.",
+    "memories": []
+  }
+]

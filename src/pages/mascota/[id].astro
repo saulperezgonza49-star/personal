@@ -1,0 +1,654 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import MemoryCard from "../../components/MemoryCard.astro";
+import AudioPlayer from "../../components/AudioPlayer.astro";
+import { createClient } from "@supabase/supabase-js";
+import mascotasJson from "../../data/mascotas.json";
+
+// Credenciales
+const supabaseUrl =
+  import.meta.env.PUBLIC_SUPABASE_URL ||
+  "https://crhvxeidbjfyenyynmnr.supabase.co";
+const supabaseKey =
+  import.meta.env.PUBLIC_SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyaHZ4ZWlkYmpmeWVueXlubW5yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5MTQ4OTQsImV4cCI6MjA5NzQ5MDg5NH0._0j3BdcANWt3kYQhzT2_kt-W8DyGD5AvTpAi4I7MYgc";
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// 1. Definir las rutas conocidas
+export async function getStaticPaths() {
+  const url =
+    import.meta.env.PUBLIC_SUPABASE_URL ||
+    "https://crhvxeidbjfyenyynmnr.supabase.co";
+  const key =
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyaHZ4ZWlkYmpmeWVueXlubW5yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5MTQ4OTQsImV4cCI6MjA5NzQ5MDg5NH0._0j3BdcANWt3kYQhzT2_kt-W8DyGD5AvTpAi4I7MYgc";
+  const client = createClient(url, key);
+
+  const { data: dbMascotas } = await client.from("mascotas").select("id");
+
+  const pathsJson = mascotasJson.map((m) => ({ params: { id: m.id } }));
+  const pathsDb = (dbMascotas || []).map((m) => ({ params: { id: m.id } }));
+
+  const allIds = Array.from(
+    new Set([
+      ...pathsJson.map((p) => p.params.id),
+      ...pathsDb.map((p) => p.params.id),
+    ]),
+  );
+
+  return allIds.map((id) => ({ params: { id } }));
+}
+
+const { id } = Astro.params;
+
+// 2. Buscar datos de la mascota actual
+let mascota = mascotasJson.find((m) => m.id === id);
+
+if (!mascota) {
+  const { data: dbPet } = await supabase
+    .from("mascotas")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (dbPet) {
+    mascota = {
+      id: dbPet.id,
+      name: dbPet.name,
+      navName: dbPet.name,
+      phrase: dbPet.phrase,
+      memories: [],
+    };
+  }
+}
+
+if (!mascota) {
+  return Astro.redirect("/");
+}
+
+// 3. Cargar recuerdos de Supabase
+const { data: dbMemories } = await supabase
+  .from("recuerdos")
+  .select("*")
+  .eq("petId", mascota.id)
+  .order("created_at", { ascending: false });
+
+// 4. Cargar mensaje final de Supabase
+const { data: petData } = await supabase
+  .from("mascotas")
+  .select("final_message")
+  .eq("id", mascota.id)
+  .maybeSingle();
+
+const finalMessage =
+  petData?.final_message !== undefined && petData?.final_message !== null
+    ? petData.final_message
+    : "Gracias por todos los momentos hermosos que nos diste. Siempre estarás en nuestro corazón. 🤍";
+
+const todosLosRecuerdos = [...(dbMemories || []), ...(mascota.memories || [])];
+const CLOUD_NAME = "dvwbgdzhk";
+const UPLOAD_PRESET = "recuerdos_preset";
+---
+
+<Layout title={`${mascota.name} 🤍`}>
+  <section class="max-w-4xl mx-auto px-4 py-6 md:py-12">
+    <!-- Encabezado responsivo -->
+    <div class="text-center my-4 md:my-8">
+      <span class="text-3xl md:text-4xl inline-block animate-bounce">🐾</span>
+
+      <!-- Título de la mascota -->
+      <div class="flex items-center justify-center gap-2 mt-2 px-2 flex-wrap">
+        <h1
+          id="pet-name-heading"
+          class="text-2xl sm:text-3xl md:text-4xl font-bold text-stone-900 tracking-tight break-words max-w-full"
+        >
+          {mascota.name}
+        </h1>
+        <button
+          id="edit-pet-name-btn"
+          class="text-xs bg-amber-100/70 hover:bg-amber-200 text-amber-900 px-3 py-1.5 rounded-full transition-all cursor-pointer font-medium shadow-xs border border-amber-200/50 flex items-center gap-1 active:scale-95"
+          title="Editar nombre"
+        >
+          <span>✏️</span>
+          <span class="hidden sm:inline">Editar</span>
+        </button>
+      </div>
+
+      <!-- Frase de la mascota -->
+      <div
+        class="flex items-center justify-center gap-2 mt-3 px-4 max-w-lg mx-auto"
+      >
+        <p
+          id="pet-phrase-text"
+          class="text-stone-600 italic text-sm md:text-base leading-relaxed"
+        >
+          "{mascota.phrase}"
+        </p>
+        <button
+          id="edit-pet-phrase-btn"
+          class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-600 p-1.5 rounded-full transition-all cursor-pointer flex-shrink-0 active:scale-95"
+          title="Editar frase"
+        >
+          ✏️
+        </button>
+      </div>
+
+      <!-- Botón Subir Recuerdo -->
+      <div class="mt-6 md:mt-8 flex justify-center">
+        <button
+          id="upload-widget-btn"
+          class="w-full sm:w-auto bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-medium px-8 py-3.5 rounded-2xl sm:rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-sm md:text-base cursor-pointer flex items-center justify-center gap-2 active:scale-95"
+        >
+          <span>✨</span> Subir nuevo recuerdo
+        </button>
+      </div>
+
+      <div
+        class="w-16 md:w-24 h-1 bg-amber-200/80 mx-auto mt-6 md:mt-8 rounded-full"
+      >
+      </div>
+    </div>
+
+    <!-- Modal: Agregar Recuerdo (Fotos/Videos) -->
+    <div
+      id="memory-modal"
+      class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden transition-all duration-300"
+    >
+      <div
+        class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-stone-100 relative animate-in fade-in zoom-in duration-200"
+      >
+        <div class="text-center mb-5">
+          <span class="text-3xl">📸</span>
+          <h3 class="text-xl sm:text-2xl font-bold text-stone-800 mt-1">
+            Nuevo Recuerdo
+          </h3>
+          <p class="text-stone-500 text-xs sm:text-sm mt-1">
+            Escribe un título y un mensaje bonito antes de seleccionar tu foto o
+            video.
+          </p>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label
+              class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1"
+              >Título</label
+            >
+            <input
+              type="text"
+              id="input-title"
+              placeholder="Ej. Un día de juegos en el parque"
+              class="w-full px-4 py-3 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
+            />
+          </div>
+
+          <div>
+            <label
+              class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1"
+              >Descripción</label
+            >
+            <textarea
+              id="input-description"
+              rows="3"
+              placeholder="Ej. Estaba súper feliz corriendo por todos lados..."
+              class="w-full px-4 py-3 rounded-xl border border-stone-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+          <button
+            id="cancel-btn"
+            class="w-1/2 py-3 rounded-xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 active:scale-95 transition-all cursor-pointer"
+            >Cancelar</button
+          >
+          <button
+            id="continue-btn"
+            class="w-1/2 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-sm font-medium transition-all shadow-sm cursor-pointer"
+            >Elegir Foto / Video 📸</button
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid de recuerdos adaptado a celular y desktop -->
+    <div
+      id="memories-grid"
+      class="grid sm:grid-cols-2 gap-4 md:gap-8 mt-8 md:mt-12"
+    >
+      {todosLosRecuerdos.map((memory) => <MemoryCard {...memory} />)}
+    </div>
+
+    <!-- Mensaje amigable cuando aún no se han subido recuerdos -->
+    {
+      todosLosRecuerdos.length === 0 && (
+        <div
+          id="empty-state"
+          class="text-center py-12 px-6 bg-amber-50/40 rounded-3xl border border-dashed border-amber-200/80 mt-8"
+        >
+          <span class="text-4xl inline-block animate-pulse">📸</span>
+          <h3 class="text-lg font-bold text-stone-800 mt-2">
+            Aún no hay recuerdos aquí
+          </h3>
+          <p class="text-stone-500 text-xs sm:text-sm mt-1 max-w-sm mx-auto leading-relaxed">
+            Toca el botón <strong>"Subir nuevo recuerdo"</strong> para agregar
+            las primeras fotos o videos especiales.
+          </p>
+        </div>
+      )
+    }
+
+    <!-- 💌 SECCIÓN DEL MENSAJE FINAL EDITABLE/BORRABLE -->
+    <div
+      id="final-message-container"
+      class={`mt-12 md:mt-16 p-6 sm:p-8 bg-amber-50/70 rounded-3xl border border-amber-200/60 text-center relative shadow-xs ${!finalMessage ? "hidden" : ""}`}
+    >
+      <span class="text-3xl">🕊️</span>
+      <h3 class="text-lg sm:text-xl font-bold text-amber-900 mt-2 mb-3">
+        Mensaje Especial
+      </h3>
+      <p
+        id="final-message-text"
+        class="text-stone-700 italic text-sm md:text-base leading-relaxed max-w-xl mx-auto"
+      >
+        {finalMessage}
+      </p>
+
+      <div class="mt-6 flex flex-wrap justify-center gap-2 sm:gap-3">
+        <button
+          id="edit-msg-btn"
+          class="text-xs bg-white text-amber-900 px-4 py-2.5 rounded-full border border-amber-200/80 hover:bg-amber-100/80 transition-all shadow-2xs font-medium cursor-pointer active:scale-95"
+          >✏️ Editar mensaje</button
+        >
+        <button
+          id="delete-msg-btn"
+          class="text-xs bg-white text-rose-700 px-4 py-2.5 rounded-full border border-rose-200/80 hover:bg-rose-50 transition-all shadow-2xs font-medium cursor-pointer active:scale-95"
+          >🗑️ Borrar mensaje</button
+        >
+      </div>
+    </div>
+
+    <!-- Botón para restaurar mensaje -->
+    <div
+      id="restore-msg-container"
+      class={`mt-10 text-center ${finalMessage ? "hidden" : ""}`}
+    >
+      <button
+        id="restore-msg-btn"
+        class="text-xs sm:text-sm text-stone-500 hover:text-amber-700 underline underline-offset-4 cursor-pointer font-medium"
+        >➕ Agregar un mensaje de despedida/dedicatoria</button
+      >
+    </div>
+  </section>
+
+  <!-- MODAL EDITAR TEXTO -->
+  <div
+    id="custom-prompt-modal"
+    class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden transition-all duration-300"
+  >
+    <div
+      class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-stone-100 relative"
+    >
+      <div class="text-center mb-4">
+        <span id="prompt-icon" class="text-3xl">✏️</span>
+        <h3 id="prompt-title" class="text-xl font-bold text-stone-800 mt-1">
+          Editar información
+        </h3>
+        <p id="prompt-subtitle" class="text-stone-500 text-xs sm:text-sm mt-1">
+          Escribe los nuevos datos a continuación:
+        </p>
+      </div>
+
+      <div class="mt-4">
+        <textarea
+          id="prompt-input"
+          rows="3"
+          class="w-full px-4 py-3 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 resize-none transition-all"
+        ></textarea>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button
+          id="prompt-cancel-btn"
+          class="w-1/2 py-3 rounded-xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 active:scale-95 transition-all cursor-pointer"
+          >Cancelar</button
+        >
+        <button
+          id="prompt-save-btn"
+          class="w-1/2 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-sm font-medium transition-all shadow-sm cursor-pointer"
+          >Guardar ✨</button
+        >
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMACIÓN BORRAR -->
+  <div
+    id="custom-confirm-modal"
+    class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden transition-all duration-300"
+  >
+    <div
+      class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-stone-100 text-center relative"
+    >
+      <span class="text-4xl">🗑️</span>
+      <h3 id="confirm-title" class="text-xl font-bold text-stone-800 mt-2">
+        ¿Estás segura?
+      </h3>
+      <p
+        id="confirm-subtitle"
+        class="text-stone-500 text-xs sm:text-sm mt-2 leading-relaxed"
+      >
+        Esta acción ocultará el mensaje especial de despedida de esta página.
+      </p>
+
+      <div class="flex gap-3 mt-6">
+        <button
+          id="confirm-cancel-btn"
+          class="w-1/2 py-3 rounded-xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 active:scale-95 transition-all cursor-pointer"
+          >Cancelar</button
+        >
+        <button
+          id="confirm-ok-btn"
+          class="w-1/2 py-3 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-sm font-medium transition-all shadow-sm cursor-pointer"
+          >Sí, borrar</button
+        >
+      </div>
+    </div>
+  </div>
+
+  <AudioPlayer />
+</Layout>
+
+<script
+  is:inline
+  src="https://upload-widget.cloudinary.com/global/all.js"
+  type="text/javascript"></script>
+
+<script
+  define:vars={{
+    CLOUD_NAME,
+    UPLOAD_PRESET,
+    supabaseUrl,
+    supabaseKey,
+    petId: mascota.id,
+  }}
+>
+  window.addEventListener("DOMContentLoaded", () => {
+    // Elementos Cloudinary y Recuerdos
+    const uploadBtn = document.getElementById("upload-widget-btn");
+    const modal = document.getElementById("memory-modal");
+    const cancelBtn = document.getElementById("cancel-btn");
+    const continueBtn = document.getElementById("continue-btn");
+    const inputTitle = document.getElementById("input-title");
+    const inputDescription = document.getElementById("input-description");
+    const grid = document.getElementById("memories-grid");
+    const emptyState = document.getElementById("empty-state");
+
+    // Elementos de edición
+    const petNameHeading = document.getElementById("pet-name-heading");
+    const editPetNameBtn = document.getElementById("edit-pet-name-btn");
+    const petPhraseText = document.getElementById("pet-phrase-text");
+    const editPetPhraseBtn = document.getElementById("edit-pet-phrase-btn");
+
+    const msgContainer = document.getElementById("final-message-container");
+    const restoreContainer = document.getElementById("restore-msg-container");
+    const msgText = document.getElementById("final-message-text");
+    const editMsgBtn = document.getElementById("edit-msg-btn");
+    const deleteMsgBtn = document.getElementById("delete-msg-btn");
+    const restoreMsgBtn = document.getElementById("restore-msg-btn");
+
+    // Modales flotantes
+    const promptModal = document.getElementById("custom-prompt-modal");
+    const promptIcon = document.getElementById("prompt-icon");
+    const promptTitle = document.getElementById("prompt-title");
+    const promptSubtitle = document.getElementById("prompt-subtitle");
+    const promptInput = document.getElementById("prompt-input");
+    const promptCancelBtn = document.getElementById("prompt-cancel-btn");
+    const promptSaveBtn = document.getElementById("prompt-save-btn");
+
+    const confirmModal = document.getElementById("custom-confirm-modal");
+    const confirmCancelBtn = document.getElementById("confirm-cancel-btn");
+    const confirmOkBtn = document.getElementById("confirm-ok-btn");
+
+    let customTitle = "";
+    let customDescription = "";
+    let onPromptSaveCallback = null;
+    let onConfirmOkCallback = null;
+
+    // Helpers para Modales
+    const showCustomPrompt = ({
+      icon,
+      title,
+      subtitle,
+      defaultValue,
+      onSave,
+    }) => {
+      if (promptIcon) promptIcon.innerText = icon || "✏️";
+      if (promptTitle) promptTitle.innerText = title || "Editar";
+      if (promptSubtitle) promptSubtitle.innerText = subtitle || "";
+      if (promptInput) promptInput.value = defaultValue || "";
+      onPromptSaveCallback = onSave;
+      promptModal?.classList.remove("hidden");
+      setTimeout(() => promptInput?.focus(), 100);
+    };
+
+    const closePromptModal = () => {
+      promptModal?.classList.add("hidden");
+      onPromptSaveCallback = null;
+    };
+
+    promptCancelBtn?.addEventListener("click", closePromptModal);
+    promptSaveBtn?.addEventListener("click", () => {
+      const val = promptInput?.value.trim();
+      if (val !== undefined && onPromptSaveCallback) {
+        onPromptSaveCallback(val);
+      }
+      closePromptModal();
+    });
+
+    const showCustomConfirm = ({ onConfirm }) => {
+      onConfirmOkCallback = onConfirm;
+      confirmModal?.classList.remove("hidden");
+    };
+
+    const closeConfirmModal = () => {
+      confirmModal?.classList.add("hidden");
+      onConfirmOkCallback = null;
+    };
+
+    confirmCancelBtn?.addEventListener("click", closeConfirmModal);
+    confirmOkBtn?.addEventListener("click", () => {
+      if (onConfirmOkCallback) onConfirmOkCallback();
+      closeConfirmModal();
+    });
+
+    // Subir Recuerdos
+    uploadBtn?.addEventListener("click", () => {
+      if (inputTitle) inputTitle.value = "";
+      if (inputDescription) inputDescription.value = "";
+      modal?.classList.remove("hidden");
+    });
+
+    cancelBtn?.addEventListener("click", () => modal?.classList.add("hidden"));
+
+    // Widget de Cloudinary con soporte de fotos y videos
+    // @ts-ignore
+    const myWidget =
+      typeof cloudinary !== "undefined"
+        ? cloudinary.createUploadWidget(
+            {
+              cloudName: CLOUD_NAME,
+              uploadPreset: UPLOAD_PRESET,
+              sources: ["local", "camera"],
+              resourceType: "auto",
+              clientAllowedFormats: [
+                "png",
+                "jpeg",
+                "jpg",
+                "webp",
+                "mp4",
+                "mov",
+                "webm",
+                "m4v",
+              ],
+              multiple: false,
+            },
+            async (error, result) => {
+              if (!error && result && result.event === "success") {
+                const mediaUrl = result.info.secure_url;
+                const isVideo = result.info.resource_type === "video";
+                const fechaActual = new Date().toLocaleDateString("es-MX", {
+                  month: "long",
+                  year: "numeric",
+                });
+
+                const nuevoRecuerdo = {
+                  title: customTitle || "Hermoso Momento",
+                  date: fechaActual,
+                  description:
+                    customDescription || "Guardado con mucho cariño 🤍",
+                  mediaUrl: mediaUrl,
+                  isVideo: isVideo,
+                  petId: petId,
+                };
+
+                try {
+                  const res = await fetch(`${supabaseUrl}/rest/v1/recuerdos`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      apikey: supabaseKey,
+                      Authorization: `Bearer ${supabaseKey}`,
+                      Prefer: "return=representation",
+                    },
+                    body: JSON.stringify(nuevoRecuerdo),
+                  });
+
+                  if (res.ok) {
+                    // Ocultar mensaje de vacío si estaba visible
+                    if (emptyState) emptyState.style.display = "none";
+
+                    const newCard = document.createElement("div");
+                    newCard.className =
+                      "bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden animate-in fade-in zoom-in duration-300";
+                    newCard.innerHTML = `
+                      <div class="overflow-hidden aspect-video bg-stone-900 flex items-center justify-center">
+                        ${isVideo ? `<video src="${mediaUrl}" controls class="w-full h-full object-cover"></video>` : `<img src="${mediaUrl}" class="w-full h-full object-cover" />`}
+                      </div>
+                      <div class="p-5 sm:p-6">
+                        <span class="text-xs font-semibold text-amber-600/80 tracking-wide uppercase">${fechaActual}</span>
+                        <h3 class="text-lg sm:text-xl font-bold text-stone-800 mt-1 mb-2">${nuevoRecuerdo.title}</h3>
+                        <p class="text-stone-600 text-xs sm:text-sm leading-relaxed">${nuevoRecuerdo.description}</p>
+                      </div>
+                    `;
+                    if (grid) grid.insertBefore(newCard, grid.firstChild);
+                  }
+                } catch (e) {
+                  console.error("Error al guardar en Supabase:", e);
+                }
+              }
+            },
+          )
+        : null;
+
+    continueBtn?.addEventListener("click", () => {
+      customTitle = inputTitle?.value.trim() || "";
+      customDescription = inputDescription?.value.trim() || "";
+      modal?.classList.add("hidden");
+      myWidget?.open();
+    });
+
+    // Actualizar datos en Supabase Helper
+    const updatePetDetailsInDB = async (payload) => {
+      await fetch(`${supabaseUrl}/rest/v1/mascotas?id=eq.${petId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify(payload),
+      });
+    };
+
+    // ✏️ EDITAR NOMBRE
+    editPetNameBtn?.addEventListener("click", () => {
+      const currentName = petNameHeading?.innerText.trim() || "";
+      showCustomPrompt({
+        icon: "🐾",
+        title: "Editar nombre",
+        subtitle: "¿Qué nombre le quieres poner a esta mascota?",
+        defaultValue: currentName,
+        onSave: async (newName) => {
+          if (newName !== "") {
+            if (petNameHeading) petNameHeading.innerText = newName;
+            await updatePetDetailsInDB({ name: newName });
+          }
+        },
+      });
+    });
+
+    // ✏️ EDITAR FRASE
+    editPetPhraseBtn?.addEventListener("click", () => {
+      const currentPhrase =
+        petPhraseText?.innerText.replace(/^"|"$/g, "").trim() || "";
+      showCustomPrompt({
+        icon: "✨",
+        title: "Editar frase",
+        subtitle: "Escribe una frase especial para recordarle:",
+        defaultValue: currentPhrase,
+        onSave: async (newPhrase) => {
+          if (newPhrase !== "") {
+            if (petPhraseText) petPhraseText.innerText = `"${newPhrase}"`;
+            await updatePetDetailsInDB({ phrase: newPhrase });
+          }
+        },
+      });
+    });
+
+    // ✏️ EDITAR MENSAJE FINAL
+    editMsgBtn?.addEventListener("click", () => {
+      const current = msgText?.innerText.trim() || "";
+      showCustomPrompt({
+        icon: "🕊️",
+        title: "Mensaje Especial",
+        subtitle: "Edita la dedicatoria especial de despedida:",
+        defaultValue: current,
+        onSave: async (updated) => {
+          if (updated !== "") {
+            if (msgText) msgText.innerText = updated;
+            await updatePetDetailsInDB({ final_message: updated });
+          }
+        },
+      });
+    });
+
+    // 🗑️ BORRAR MENSAJE FINAL
+    deleteMsgBtn?.addEventListener("click", () => {
+      showCustomConfirm({
+        onConfirm: async () => {
+          msgContainer?.classList.add("hidden");
+          restoreContainer?.classList.remove("hidden");
+          await updatePetDetailsInDB({ final_message: "" });
+        },
+      });
+    });
+
+    // ➕ RESTAURAR MENSAJE
+    restoreMsgBtn?.addEventListener("click", () => {
+      showCustomPrompt({
+        icon: "💌",
+        title: "Agregar Mensaje",
+        subtitle: "Escribe la dedicatoria o mensaje de despedida:",
+        defaultValue: "",
+        onSave: async (updated) => {
+          if (updated !== "") {
+            if (msgText) msgText.innerText = updated;
+            msgContainer?.classList.remove("hidden");
+            restoreContainer?.classList.add("hidden");
+            await updatePetDetailsInDB({ final_message: updated });
+          }
+        },
+      });
+    });
+  });
+</script>
