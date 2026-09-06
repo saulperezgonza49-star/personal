@@ -350,6 +350,8 @@ const UPLOAD_PRESET = "recuerdos_preset";
     supabaseUrl,
     supabaseKey,
     petId: mascota.id,
+    petInitialName: mascota.name,
+    petInitialPhrase: mascota.phrase || "",
   }}
 >
   window.addEventListener("DOMContentLoaded", () => {
@@ -550,32 +552,67 @@ const UPLOAD_PRESET = "recuerdos_preset";
     });
 
     // Actualizar datos en Supabase Helper
-    // Usa upsert (on_conflict=id) en vez de un PATCH ciego: si la mascota
-    // todavía no tiene fila en Supabase (por ejemplo, viene solo del JSON
-    // local), esto la crea; si ya existe, la actualiza normalmente.
+    // 1) Intentamos UPDATE (PATCH) primero: esto es lo que ya tenía permisos
+    //    (RLS) configurados y funcionaba antes.
+    // 2) Solo si no había ninguna fila con ese id (mascota que vive solo en
+    //    el JSON local), hacemos un INSERT normal para crearla.
     const updatePetDetailsInDB = async (payload) => {
-      const res = await fetch(
-        `${supabaseUrl}/rest/v1/mascotas?on_conflict=id`,
+      const patchRes = await fetch(
+        `${supabaseUrl}/rest/v1/mascotas?id=eq.${petId}`,
         {
-          method: "POST",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             apikey: supabaseKey,
             Authorization: `Bearer ${supabaseKey}`,
-            Prefer: "resolution=merge-duplicates,return=representation",
+            Prefer: "return=representation",
           },
-          body: JSON.stringify({ id: petId, ...payload }),
+          body: JSON.stringify(payload),
         },
       );
-      if (!res.ok) {
-        const errText = await res.text();
+
+      if (!patchRes.ok) {
+        const errText = await patchRes.text();
+        console.error("Error al actualizar mascota:", patchRes.status, errText);
+        alert(
+          `No se pudo guardar el cambio (código ${patchRes.status}). Revisa la consola.`,
+        );
+        return;
+      }
+
+      const updatedRows = await patchRes.json().catch(() => []);
+      if (Array.isArray(updatedRows) && updatedRows.length > 0) {
+        return; // Ya existía la fila y se actualizó bien.
+      }
+
+      // No había fila todavía: la creamos con un INSERT normal, incluyendo
+      // el nombre y la frase actuales para no dejar columnas requeridas
+      // vacías (aunque el usuario solo haya editado una de ellas).
+      const insertRes = await fetch(`${supabaseUrl}/rest/v1/mascotas`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          Prefer: "return=representation",
+        },
+        body: JSON.stringify({
+          id: petId,
+          name: petInitialName,
+          phrase: petInitialPhrase,
+          ...payload,
+        }),
+      });
+
+      if (!insertRes.ok) {
+        const errText = await insertRes.text();
         console.error(
-          "Error al guardar cambios en Supabase:",
-          res.status,
+          "Error al crear fila de mascota:",
+          insertRes.status,
           errText,
         );
         alert(
-          `No se pudo guardar el cambio (código ${res.status}). Revisa la consola.`,
+          `No se pudo guardar el cambio (código ${insertRes.status}). Revisa la consola.`,
         );
       }
     };
