@@ -14,30 +14,10 @@ const supabaseKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyaHZ4ZWlkYmpmeWVueXlubW5yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5MTQ4OTQsImV4cCI6MjA5NzQ5MDg5NH0._0j3BdcANWt3kYQhzT2_kt-W8DyGD5AvTpAi4I7MYgc";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// 1. Definir las rutas conocidas
-export async function getStaticPaths() {
-  const url =
-    import.meta.env.PUBLIC_SUPABASE_URL ||
-    "https://crhvxeidbjfyenyynmnr.supabase.co";
-  const key =
-    import.meta.env.PUBLIC_SUPABASE_ANON_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyaHZ4ZWlkYmpmeWVueXlubW5yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5MTQ4OTQsImV4cCI6MjA5NzQ5MDg5NH0._0j3BdcANWt3kYQhzT2_kt-W8DyGD5AvTpAi4I7MYgc";
-  const client = createClient(url, key);
-
-  const { data: dbMascotas } = await client.from("mascotas").select("id");
-
-  const pathsJson = mascotasJson.map((m) => ({ params: { id: m.id } }));
-  const pathsDb = (dbMascotas || []).map((m) => ({ params: { id: m.id } }));
-
-  const allIds = Array.from(
-    new Set([
-      ...pathsJson.map((p) => p.params.id),
-      ...pathsDb.map((p) => p.params.id),
-    ]),
-  );
-
-  return allIds.map((id) => ({ params: { id } }));
-}
+// Nota: ya NO usamos getStaticPaths. El sitio corre en modo servidor (SSR),
+// así que esta página se genera en cada visita consultando Supabase al vuelo.
+// Esto permite que una mascota creada hace un segundo ya tenga su página
+// sin necesidad de esperar un nuevo build/deploy.
 
 const { id } = Astro.params;
 
@@ -570,16 +550,34 @@ const UPLOAD_PRESET = "recuerdos_preset";
     });
 
     // Actualizar datos en Supabase Helper
+    // Usa upsert (on_conflict=id) en vez de un PATCH ciego: si la mascota
+    // todavía no tiene fila en Supabase (por ejemplo, viene solo del JSON
+    // local), esto la crea; si ya existe, la actualiza normalmente.
     const updatePetDetailsInDB = async (payload) => {
-      await fetch(`${supabaseUrl}/rest/v1/mascotas?id=eq.${petId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/mascotas?on_conflict=id`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+            Prefer: "resolution=merge-duplicates,return=representation",
+          },
+          body: JSON.stringify({ id: petId, ...payload }),
         },
-        body: JSON.stringify(payload),
-      });
+      );
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error(
+          "Error al guardar cambios en Supabase:",
+          res.status,
+          errText,
+        );
+        alert(
+          `No se pudo guardar el cambio (código ${res.status}). Revisa la consola.`,
+        );
+      }
     };
 
     // ✏️ EDITAR NOMBRE

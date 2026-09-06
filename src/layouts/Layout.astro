@@ -1,5 +1,6 @@
 ---
 import AudioPlayer from "../components/AudioPlayer.astro";
+import Navbar from "../components/Navbar.astro";
 
 interface Props {
 	title: string;
@@ -24,6 +25,9 @@ const { title } = Astro.props;
 	<body
 		class="bg-stone-50 text-stone-800 min-h-screen flex flex-col font-sans antialiased selection:bg-amber-200 selection:text-amber-900"
 	>
+		<!-- 🧭 Barra de navegación global (aparece en TODAS las páginas) -->
+		<Navbar />
+
 		<!-- Contenido principal de cada página -->
 		<div class="flex-grow">
 			<slot />

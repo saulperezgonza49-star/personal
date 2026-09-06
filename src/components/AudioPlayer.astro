@@ -1,5 +1,8 @@
 ---
 // Componente de Reproductor de Música Flotante de Spotify (Soporta links intl-es)
+// Usa la API oficial de Spotify (IFrame API) para poder controlar play/pause
+// de verdad, y así pausarse automáticamente cuando alguien reproduce un video
+// de recuerdos.
 ---
 
 <div class="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
@@ -41,17 +44,13 @@
       </button>
     </div>
 
-    <!-- Contenedor del reproductor Iframe de Spotify -->
+    <!-- Contenedor del reproductor embed de Spotify (la API mete su iframe aquí) -->
     <div
       id="spotify-player-container"
       class="rounded-2xl overflow-hidden hidden border border-stone-100 shadow-sm mt-2"
+      style="height: 152px;"
     >
-      <iframe
-        id="spotify-iframe"
-        class="w-full h-[152px] rounded-2xl border-0"
-        src=""
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-        loading="lazy"></iframe>
+      <div id="spotify-embed-target"></div>
     </div>
   </div>
 
@@ -69,6 +68,10 @@
   </button>
 </div>
 
+<!-- API oficial de Spotify: necesaria para poder pausar el reproductor desde JS -->
+<script is:inline src="https://open.spotify.com/embed/iframe-api/v1" async
+></script>
+
 <script>
   window.addEventListener("DOMContentLoaded", () => {
     const musicBtn = document.getElementById("music-toggle-btn");
@@ -79,35 +82,73 @@
     ) as HTMLInputElement;
     const applyBtn = document.getElementById("apply-spotify-btn");
     const playerContainer = document.getElementById("spotify-player-container");
-    const iframe = document.getElementById(
-      "spotify-iframe",
-    ) as HTMLIFrameElement;
+    const embedTarget = document.getElementById("spotify-embed-target");
     const musicText = document.getElementById("music-text");
     const musicIcon = document.getElementById("music-icon");
 
-    // Limpia y extrae el tipo (track, playlist, album) y el ID de Spotify correctamente
-    const getSpotifyEmbedUrl = (url: string) => {
+    // Controller de la API de Spotify. Se crea una sola vez; después solo
+    // le pedimos que cargue una URI distinta con loadUri().
+    let spotifyController: any = null;
+    let apiReady = false;
+    let pendingUri: string | null = null;
+
+    // Se expone en window para que cualquier otra parte del sitio (por
+    // ejemplo, el código que reproduce videos de recuerdos) pueda pausar
+    // la música sin necesidad de conocer los detalles de Spotify.
+    (window as any).__pauseSpotifyMusic = () => {
+      spotifyController?.pause();
+    };
+
+    // Convierte cualquier link de Spotify (con o sin /intl-es/, embed o no)
+    // a un URI tipo "spotify:track:ID", que es lo que pide la IFrame API.
+    const getSpotifyUri = (url: string): string => {
       if (!url || !url.includes("spotify.com")) return "";
-
-      // Si ya viene formateado como embed
-      if (url.includes("open.spotify.com/embed/")) return url;
-
-      // Detecta track, playlist, album o artist e ignora prefijos de idioma como /intl-es/
-      const match = url.match(/(track|playlist|album|artist)\/([a-zA-Z0-9]+)/);
+      const match = url.match(
+        /(track|playlist|album|artist|episode|show)\/([a-zA-Z0-9]+)/,
+      );
       if (match && match[1] && match[2]) {
-        const type = match[1];
-        const id = match[2];
-        return `https://open.spotify.com/embed/${type}/${id}?utm_source=generator`;
+        return `spotify:${match[1]}:${match[2]}`;
       }
-
       return "";
     };
 
+    const startOrUpdatePlayer = (uri: string) => {
+      if (spotifyController) {
+        spotifyController.loadUri(uri);
+        spotifyController.play();
+        return;
+      }
+      // Todavía no hay controller: guardamos la uri, la API la recoge
+      // en cuanto esté lista (ver onSpotifyIframeApiReady más abajo).
+      pendingUri = uri;
+      if (apiReady) createController();
+    };
+
+    const createController = () => {
+      const IFrameAPI = (window as any).__spotifyIFrameAPI;
+      if (!IFrameAPI || !embedTarget || !pendingUri) return;
+      IFrameAPI.createController(
+        embedTarget,
+        { uri: pendingUri, width: "100%", height: "152" },
+        (controller: any) => {
+          spotifyController = controller;
+          pendingUri = null;
+        },
+      );
+    };
+
+    // Callback global que llama la API de Spotify cuando termina de cargar.
+    (window as any).onSpotifyIframeApiReady = (IFrameAPI: any) => {
+      (window as any).__spotifyIFrameAPI = IFrameAPI;
+      apiReady = true;
+      if (pendingUri) createController();
+    };
+
     const loadSpotifyTrack = (url: string) => {
-      const embedUrl = getSpotifyEmbedUrl(url);
-      if (embedUrl && iframe && playerContainer) {
-        iframe.src = embedUrl;
+      const uri = getSpotifyUri(url);
+      if (uri && playerContainer) {
         playerContainer.classList.remove("hidden");
+        startOrUpdatePlayer(uri);
         if (musicText) musicText.innerText = "Spotify activo 🎶";
         if (musicIcon) musicIcon.innerText = "🎶";
         localStorage.setItem("custom_spotify_music", url);
@@ -139,5 +180,20 @@
         loadSpotifyTrack(inputUrl);
       }
     });
+
+    // 🎬 Pausar Spotify automáticamente cuando cualquier video de recuerdos
+    // empieza a reproducirse. Usamos "capture" porque el evento "play" de
+    // <video> no hace bubbling, así que hay que escucharlo en la fase de
+    // captura para atrapar videos creados dinámicamente también.
+    document.addEventListener(
+      "play",
+      (e) => {
+        const target = e.target as HTMLElement;
+        if (target?.tagName === "VIDEO") {
+          (window as any).__pauseSpotifyMusic?.();
+        }
+      },
+      true,
+    );
   });
 </script>

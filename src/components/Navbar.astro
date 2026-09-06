@@ -1,18 +1,54 @@
 ---
-import mascotas from '../data/mascotas.json';
+import mascotasJson from "../data/mascotas.json";
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl =
+  import.meta.env.PUBLIC_SUPABASE_URL ||
+  "https://crhvxeidbjfyenyynmnr.supabase.co";
+const supabaseKey =
+  import.meta.env.PUBLIC_SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyaHZ4ZWlkYmpmeWVueXlubW5yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5MTQ4OTQsImV4cCI6MjA5NzQ5MDg5NH0._0j3BdcANWt3kYQhzT2_kt-W8DyGD5AvTpAi4I7MYgc";
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const { data: dbMascotas } = await supabase
+  .from("mascotas")
+  .select("id, name")
+  .order("created_at", { ascending: true });
+
+const idsJson = new Set(mascotasJson.map((m) => m.id));
+const mascotasExtra = (dbMascotas || [])
+  .filter((m) => !idsJson.has(m.id))
+  .map((m) => ({ id: m.id, navName: m.name }));
+
+const mascotas = [...mascotasJson, ...mascotasExtra];
 ---
-<nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-200/80 px-6 py-4">
-  <div class="max-w-5xl mx-auto flex justify-between items-center">
-    <a href="/" class="font-serif text-lg font-bold text-stone-800 hover:text-amber-700 transition-colors">
+
+<nav
+  class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-200/80 px-6 py-4"
+>
+  <div
+    class="max-w-5xl mx-auto flex flex-wrap justify-between items-center gap-3"
+  >
+    <a
+      href="/"
+      class="font-serif text-lg font-bold text-stone-800 hover:text-amber-700 transition-colors"
+    >
       🤍 Nuestros Compañeros
     </a>
-    
-    <div class="flex gap-4 md:gap-6 text-sm font-medium text-stone-600">
-      {mascotas.map((mascota) => (
-        <a href={`/mascota/${mascota.id}`} class="hover:text-amber-700 transition-colors">
-          {mascota.navName}
-        </a>
-      ))}
+
+    <div
+      class="flex flex-wrap gap-3 md:gap-6 text-sm font-medium text-stone-600"
+    >
+      {
+        mascotas.map((mascota) => (
+          <a
+            href={`/mascota/${mascota.id}`}
+            class="hover:text-amber-700 transition-colors"
+          >
+            {mascota.navName}
+          </a>
+        ))
+      }
     </div>
   </div>
 </nav>
