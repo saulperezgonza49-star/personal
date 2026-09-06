@@ -541,9 +541,21 @@ const UPLOAD_PRESET = "recuerdos_preset";
                       </div>
                     `;
                     if (grid) grid.insertBefore(newCard, grid.firstChild);
+                  } else {
+                    // 👀 Aquí vemos la razón REAL del fallo (RLS, columna mal, etc.)
+                    const errorBody = await res.text();
+                    console.error(
+                      "Supabase rechazó el INSERT en 'recuerdos':",
+                      res.status,
+                      errorBody,
+                    );
+                    alert(
+                      `No se pudo guardar el recuerdo (código ${res.status}). Revisa la consola (F12) para ver el detalle.`,
+                    );
                   }
                 } catch (e) {
-                  console.error("Error al guardar en Supabase:", e);
+                  console.error("Error de red al guardar en Supabase:", e);
+                  alert("Hubo un error de conexión al guardar el recuerdo.");
                 }
               }
             },
