@@ -1,7 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import MemoryCard from "../../components/MemoryCard.astro";
-import AudioPlayer from "../../components/AudioPlayer.astro";
 import { createClient } from "@supabase/supabase-js";
 import mascotasJson from "../../data/mascotas.json";
 
@@ -67,16 +66,11 @@ const { data: dbMemories } = await supabase
   .eq("petId", mascota.id)
   .order("created_at", { ascending: false });
 
-// 4. Cargar mensaje final de Supabase
-const { data: petData } = await supabase
-  .from("mascotas")
-  .select("final_message")
-  .eq("id", mascota.id)
-  .maybeSingle();
-
+// 4. Mensaje final (ya viene incluido en dbPet gracias al select("*") de arriba,
+// no hace falta una segunda consulta a Supabase).
 const finalMessage =
-  petData?.final_message !== undefined && petData?.final_message !== null
-    ? petData.final_message
+  dbPet?.final_message !== undefined && dbPet?.final_message !== null
+    ? dbPet.final_message
     : "Gracias por todos los momentos hermosos que nos diste. Siempre estarás en nuestro corazón. 🤍";
 
 const todosLosRecuerdos = [...(dbMemories || []), ...(mascota.memories || [])];
@@ -371,8 +365,6 @@ const UPLOAD_PRESET = "recuerdos_preset";
       )
     }
   </div>
-
-  <AudioPlayer />
 </Layout>
 
 <script
