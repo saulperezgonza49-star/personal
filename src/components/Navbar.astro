@@ -2,6 +2,15 @@
 import mascotasJson from "../data/mascotas.json";
 import { createClient } from "@supabase/supabase-js";
 
+interface MascotaLocal {
+  id: string;
+  name: string;
+  navName: string;
+  phrase: string;
+  memories: any[];
+}
+const mascotasLocales = mascotasJson as MascotaLocal[];
+
 const supabaseUrl =
   import.meta.env.PUBLIC_SUPABASE_URL ||
   "https://crhvxeidbjfyenyynmnr.supabase.co";
@@ -15,12 +24,17 @@ const { data: dbMascotas } = await supabase
   .select("id, name")
   .order("created_at", { ascending: true });
 
-const idsJson = new Set(mascotasJson.map((m) => m.id));
+const dbPorId = new Map((dbMascotas || []).map((m) => [m.id, m.name]));
+const mascotasBase = mascotasLocales.map((m) =>
+  dbPorId.has(m.id) ? { ...m, navName: dbPorId.get(m.id) } : m,
+);
+
+const idsJson = new Set(mascotasLocales.map((m) => m.id));
 const mascotasExtra = (dbMascotas || [])
   .filter((m) => !idsJson.has(m.id))
   .map((m) => ({ id: m.id, navName: m.name }));
 
-const mascotas = [...mascotasJson, ...mascotasExtra];
+const mascotas = [...mascotasBase, ...mascotasExtra];
 ---
 
 <nav

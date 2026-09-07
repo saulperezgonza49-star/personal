@@ -5,6 +5,18 @@ import AudioPlayer from "../../components/AudioPlayer.astro";
 import { createClient } from "@supabase/supabase-js";
 import mascotasJson from "../../data/mascotas.json";
 
+// Le damos forma explícita al JSON local: como ahora puede estar vacío ([]),
+// TypeScript no tiene de dónde inferir la forma de sus objetos y todo se
+// vuelve "never". Con este tipo, siempre sabe qué esperar.
+interface MascotaLocal {
+  id: string;
+  name: string;
+  navName: string;
+  phrase: string;
+  memories: any[];
+}
+const mascotasLocales = mascotasJson as MascotaLocal[];
+
 // Credenciales
 const supabaseUrl =
   import.meta.env.PUBLIC_SUPABASE_URL ||
@@ -21,24 +33,27 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const { id } = Astro.params;
 
-// 2. Buscar datos de la mascota actual
-let mascota = mascotasJson.find((m) => m.id === id);
+// 2. Buscar datos de la mascota actual.
+// IMPORTANTE: primero revisamos el JSON local solo para tener un respaldo
+// (memories, valores iniciales), pero si existe una fila en Supabase para
+// este id, esa fila SIEMPRE gana — así los cambios que el usuario guarda
+// (nombre, frase) se reflejan de verdad al recargar la página.
+let mascota = mascotasLocales.find((m) => m.id === id);
 
-if (!mascota) {
-  const { data: dbPet } = await supabase
-    .from("mascotas")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-  if (dbPet) {
-    mascota = {
-      id: dbPet.id,
-      name: dbPet.name,
-      navName: dbPet.name,
-      phrase: dbPet.phrase,
-      memories: [],
-    };
-  }
+const { data: dbPet } = await supabase
+  .from("mascotas")
+  .select("*")
+  .eq("id", id)
+  .maybeSingle();
+
+if (dbPet) {
+  mascota = {
+    id: dbPet.id,
+    name: dbPet.name,
+    navName: dbPet.name,
+    phrase: dbPet.phrase,
+    memories: mascota?.memories || [],
+  };
 }
 
 if (!mascota) {
@@ -65,6 +80,7 @@ const finalMessage =
     : "Gracias por todos los momentos hermosos que nos diste. Siempre estarás en nuestro corazón. 🤍";
 
 const todosLosRecuerdos = [...(dbMemories || []), ...(mascota.memories || [])];
+const esMascotaDelCodigo = mascotasLocales.some((m) => m.id === id);
 const CLOUD_NAME = "dvwbgdzhk";
 const UPLOAD_PRESET = "recuerdos_preset";
 ---
@@ -335,8 +351,96 @@ const UPLOAD_PRESET = "recuerdos_preset";
     </div>
   </div>
 
+  <!-- Zona de peligro: eliminar esta página por completo -->
+  <div class="max-w-md mx-auto mt-16 mb-8 px-4 text-center">
+    <div class="w-12 h-px bg-stone-200 mx-auto mb-6"></div>
+    {
+      esMascotaDelCodigo ? (
+        <p class="text-stone-400 text-xs leading-relaxed">
+          Esta página viene fija en el código del sitio, así que no se puede
+          eliminar desde aquí. Si de verdad quieres quitarla, hay que editarla
+          directo en el proyecto.
+        </p>
+      ) : (
+        <button
+          id="delete-pet-btn"
+          class="text-stone-400 hover:text-red-600 text-xs font-medium transition-colors cursor-pointer underline underline-offset-2"
+        >
+          Eliminar esta página para siempre
+        </button>
+      )
+    }
+  </div>
+
   <AudioPlayer />
 </Layout>
+
+<script
+  define:vars={{
+    petId: mascota.id,
+    esMascotaDelCodigo,
+    supabaseUrl,
+    supabaseKey,
+  }}
+>
+  window.addEventListener("DOMContentLoaded", () => {
+    const deletePetBtn = document.getElementById("delete-pet-btn");
+
+    deletePetBtn?.addEventListener("click", () => {
+      if (esMascotaDelCodigo) return;
+
+      const confirmado = confirm(
+        "¿Seguro que quieres eliminar esta página para siempre? Se borrarán también todas sus fotos y videos. Esta acción NO se puede deshacer.",
+      );
+      if (!confirmado) return;
+
+      // Doble confirmación: como es una página de recuerdos, mejor pedir
+      // una segunda confirmación antes de borrar todo de forma permanente.
+      const confirmadoOtraVez = confirm(
+        "Última confirmación: esta página desaparecerá por completo. ¿Continuar?",
+      );
+      if (!confirmadoOtraVez) return;
+
+      (async () => {
+        try {
+          // 1) Borrar primero los recuerdos (fotos/videos) asociados
+          await fetch(`${supabaseUrl}/rest/v1/recuerdos?petId=eq.${petId}`, {
+            method: "DELETE",
+            headers: {
+              apikey: supabaseKey,
+              Authorization: `Bearer ${supabaseKey}`,
+            },
+          });
+
+          // 2) Borrar la mascota
+          const res = await fetch(
+            `${supabaseUrl}/rest/v1/mascotas?id=eq.${petId}`,
+            {
+              method: "DELETE",
+              headers: {
+                apikey: supabaseKey,
+                Authorization: `Bearer ${supabaseKey}`,
+              },
+            },
+          );
+
+          if (res.ok) {
+            window.location.href = "/";
+          } else {
+            const errText = await res.text();
+            console.error("Error al eliminar la mascota:", res.status, errText);
+            alert(
+              `No se pudo eliminar la página (código ${res.status}). Revisa la consola.`,
+            );
+          }
+        } catch (err) {
+          console.error("Error de red al eliminar la mascota:", err);
+          alert("Hubo un error de conexión al eliminar la página.");
+        }
+      })();
+    });
+  });
+</script>
 
 <script
   is:inline
@@ -390,6 +494,8 @@ const UPLOAD_PRESET = "recuerdos_preset";
     const confirmModal = document.getElementById("custom-confirm-modal");
     const confirmCancelBtn = document.getElementById("confirm-cancel-btn");
     const confirmOkBtn = document.getElementById("confirm-ok-btn");
+    const confirmTitleEl = document.getElementById("confirm-title");
+    const confirmSubtitleEl = document.getElementById("confirm-subtitle");
 
     let customTitle = "";
     let customDescription = "";
@@ -427,7 +533,15 @@ const UPLOAD_PRESET = "recuerdos_preset";
       closePromptModal();
     });
 
-    const showCustomConfirm = ({ onConfirm }) => {
+    const DEFAULT_CONFIRM_TITLE = "¿Estás segura?";
+    const DEFAULT_CONFIRM_SUBTITLE =
+      "Esta acción ocultará el mensaje especial de despedida de esta página.";
+
+    const showCustomConfirm = ({ onConfirm, title, subtitle }) => {
+      if (confirmTitleEl)
+        confirmTitleEl.innerText = title || DEFAULT_CONFIRM_TITLE;
+      if (confirmSubtitleEl)
+        confirmSubtitleEl.innerText = subtitle || DEFAULT_CONFIRM_SUBTITLE;
       onConfirmOkCallback = onConfirm;
       confirmModal?.classList.remove("hidden");
     };
@@ -509,10 +623,18 @@ const UPLOAD_PRESET = "recuerdos_preset";
                     // Ocultar mensaje de vacío si estaba visible
                     if (emptyState) emptyState.style.display = "none";
 
+                    const nuevaFila = await res.json().catch(() => []);
+                    const nuevoId =
+                      Array.isArray(nuevaFila) && nuevaFila[0]
+                        ? nuevaFila[0].id
+                        : "";
+
                     const newCard = document.createElement("div");
                     newCard.className =
-                      "bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden animate-in fade-in zoom-in duration-300";
+                      "memory-card relative bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden animate-in fade-in zoom-in duration-300";
+                    newCard.dataset.memoryId = nuevoId;
                     newCard.innerHTML = `
+                      <button type="button" class="delete-memory-btn absolute top-2 right-2 z-10 bg-stone-900/60 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all cursor-pointer active:scale-95" title="Borrar este recuerdo" aria-label="Borrar este recuerdo">🗑️</button>
                       <div class="overflow-hidden aspect-video bg-stone-900 flex items-center justify-center">
                         ${isVideo ? `<video src="${mediaUrl}" controls class="w-full h-full object-cover"></video>` : `<img src="${mediaUrl}" class="w-full h-full object-cover" />`}
                       </div>
@@ -549,6 +671,63 @@ const UPLOAD_PRESET = "recuerdos_preset";
       customDescription = inputDescription?.value.trim() || "";
       modal?.classList.add("hidden");
       myWidget?.open();
+    });
+
+    // 🗑️ Borrar un recuerdo (foto/video). Usamos delegación de eventos en
+    // el grid para que funcione tanto en las tarjetas ya guardadas como en
+    // las que se acaban de crear al subir algo nuevo.
+    grid?.addEventListener("click", async (e) => {
+      const btn = e.target?.closest(".delete-memory-btn");
+      if (!btn) return;
+
+      const card = btn.closest(".memory-card");
+      const memoryId = card?.dataset.memoryId;
+
+      if (!memoryId) {
+        alert(
+          "No se pudo identificar este recuerdo para borrarlo. Recarga la página e intenta de nuevo.",
+        );
+        return;
+      }
+
+      const confirmado = confirm(
+        "¿Seguro que quieres borrar este recuerdo? No se puede deshacer.",
+      );
+      if (!confirmado) return;
+
+      try {
+        const res = await fetch(
+          `${supabaseUrl}/rest/v1/recuerdos?id=eq.${memoryId}`,
+          {
+            method: "DELETE",
+            headers: {
+              apikey: supabaseKey,
+              Authorization: `Bearer ${supabaseKey}`,
+            },
+          },
+        );
+
+        if (res.ok) {
+          card?.remove();
+          // Si ya no queda ningún recuerdo, mostrar el mensaje de vacío
+          if (
+            grid &&
+            grid.querySelectorAll(".memory-card").length === 0 &&
+            emptyState
+          ) {
+            emptyState.style.display = "";
+          }
+        } else {
+          const errText = await res.text();
+          console.error("Error al borrar recuerdo:", res.status, errText);
+          alert(
+            `No se pudo borrar el recuerdo (código ${res.status}). Revisa la consola.`,
+          );
+        }
+      } catch (err) {
+        console.error("Error de red al borrar recuerdo:", err);
+        alert("Hubo un error de conexión al borrar el recuerdo.");
+      }
     });
 
     // Actualizar datos en Supabase Helper

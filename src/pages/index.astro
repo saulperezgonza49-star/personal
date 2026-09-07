@@ -3,6 +3,15 @@ import Layout from "../layouts/Layout.astro";
 import mascotasJson from "../data/mascotas.json";
 import { createClient } from "@supabase/supabase-js";
 
+interface MascotaLocal {
+	id: string;
+	name: string;
+	navName: string;
+	phrase: string;
+	memories: any[];
+}
+const mascotasLocales = mascotasJson as MascotaLocal[];
+
 // Credenciales de Supabase
 const supabaseUrl =
 	import.meta.env.PUBLIC_SUPABASE_URL ||
@@ -25,12 +34,17 @@ const mascotasDbFormateadas = (dbMascotas || []).map((m) => ({
 	phrase: m.phrase || "Un angelito que siempre nos acompañará.",
 }));
 
-// Filtrar posibles duplicados si el id ya existía en el JSON local
-const idsJson = new Set(mascotasJson.map((m) => m.id));
+// Si una mascota existe tanto en el JSON local como en Supabase, los datos
+// de Supabase ganan (así se reflejan los cambios de nombre/frase guardados).
+const dbPorId = new Map(mascotasDbFormateadas.map((m) => [m.id, m]));
+const mascotasBase = mascotasLocales.map((m) => dbPorId.get(m.id) || m);
+
+// Agregar las mascotas que solo existen en Supabase (creadas desde el sitio)
+const idsJson = new Set(mascotasLocales.map((m) => m.id));
 const mascotasExtra = mascotasDbFormateadas.filter((m) => !idsJson.has(m.id));
 
 // Unir todas las mascotas
-const todasLasMascotas = [...mascotasJson, ...mascotasExtra];
+const todasLasMascotas = [...mascotasBase, ...mascotasExtra];
 
 // Pequeña variación de inclinación para que cada tarjeta se sienta puesta
 // a mano en el álbum, no una copia idéntica de la anterior.
