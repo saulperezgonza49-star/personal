@@ -89,13 +89,13 @@ const UPLOAD_PRESET = "recuerdos_preset";
       <div class="flex items-center justify-center gap-2 mt-2 px-2 flex-wrap">
         <h1
           id="pet-name-heading"
-          class="text-2xl sm:text-3xl md:text-4xl font-bold text-stone-900 tracking-tight break-words max-w-full"
+          class="font-serif text-2xl sm:text-3xl md:text-4xl text-ink tracking-tight break-words max-w-full"
         >
           {mascota.name}
         </h1>
         <button
           id="edit-pet-name-btn"
-          class="text-xs bg-amber-100/70 hover:bg-amber-200 text-amber-900 px-3 py-1.5 rounded-full transition-all cursor-pointer font-medium shadow-xs border border-amber-200/50 flex items-center gap-1 active:scale-95"
+          class="text-xs bg-rose/15 hover:bg-rose/25 text-rose-dark px-3 py-1.5 rounded-full transition-all cursor-pointer font-medium shadow-xs border border-rose/30 flex items-center gap-1 active:scale-95"
           title="Editar nombre"
         >
           <span>✏️</span>
@@ -109,13 +109,13 @@ const UPLOAD_PRESET = "recuerdos_preset";
       >
         <p
           id="pet-phrase-text"
-          class="text-stone-600 italic text-sm md:text-base leading-relaxed"
+          class="text-taupe italic text-sm md:text-base leading-relaxed"
         >
           "{mascota.phrase}"
         </p>
         <button
           id="edit-pet-phrase-btn"
-          class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-600 p-1.5 rounded-full transition-all cursor-pointer flex-shrink-0 active:scale-95"
+          class="text-xs bg-ink/5 hover:bg-ink/10 text-taupe p-1.5 rounded-full transition-all cursor-pointer flex-shrink-0 active:scale-95"
           title="Editar frase"
         >
           ✏️
@@ -126,14 +126,14 @@ const UPLOAD_PRESET = "recuerdos_preset";
       <div class="mt-6 md:mt-8 flex justify-center">
         <button
           id="upload-widget-btn"
-          class="w-full sm:w-auto bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-medium px-8 py-3.5 rounded-2xl sm:rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-sm md:text-base cursor-pointer flex items-center justify-center gap-2 active:scale-95"
+          class="w-full sm:w-auto bg-gradient-to-r from-rose to-rose-dark hover:from-rose-dark hover:to-rose-dark text-white font-medium px-8 py-3.5 rounded-2xl sm:rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-sm md:text-base cursor-pointer flex items-center justify-center gap-2 active:scale-95"
         >
           <span>✨</span> Subir nuevo recuerdo
         </button>
       </div>
 
       <div
-        class="w-16 md:w-24 h-1 bg-amber-200/80 mx-auto mt-6 md:mt-8 rounded-full"
+        class="w-16 md:w-24 h-1 bg-rose/80 mx-auto mt-6 md:mt-8 rounded-full"
       >
       </div>
     </div>
@@ -144,14 +144,14 @@ const UPLOAD_PRESET = "recuerdos_preset";
       class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden transition-all duration-300"
     >
       <div
-        class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-stone-100 relative animate-in fade-in zoom-in duration-200"
+        class="bg-paper rounded-3xl p-6 sm:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-ink/5 relative animate-in fade-in zoom-in duration-200"
       >
         <div class="text-center mb-5">
           <span class="text-3xl">📸</span>
-          <h3 class="text-xl sm:text-2xl font-bold text-stone-800 mt-1">
+          <h3 class="text-xl sm:text-2xl font-bold text-ink mt-1">
             Nuevo Recuerdo
           </h3>
-          <p class="text-stone-500 text-xs sm:text-sm mt-1">
+          <p class="text-taupe text-xs sm:text-sm mt-1">
             Escribe un título y un mensaje bonito antes de seleccionar tu foto o
             video.
           </p>
@@ -160,27 +160,27 @@ const UPLOAD_PRESET = "recuerdos_preset";
         <div class="space-y-4">
           <div>
             <label
-              class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1"
+              class="block text-xs font-semibold text-taupe uppercase tracking-wider mb-1"
               >Título</label
             >
             <input
               type="text"
               id="input-title"
               placeholder="Ej. Un día de juegos en el parque"
-              class="w-full px-4 py-3 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
+              class="w-full px-4 py-3 rounded-xl border border-ink/10 text-sm focus:outline-none focus:ring-2 focus:ring-rose/50 focus:border-rose transition-all"
             />
           </div>
 
           <div>
             <label
-              class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1"
+              class="block text-xs font-semibold text-taupe uppercase tracking-wider mb-1"
               >Descripción</label
             >
             <textarea
               id="input-description"
               rows="3"
               placeholder="Ej. Estaba súper feliz corriendo por todos lados..."
-              class="w-full px-4 py-3 rounded-xl border border-stone-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
+              class="w-full px-4 py-3 rounded-xl border border-ink/10 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-rose/50 focus:border-rose transition-all"
             ></textarea>
           </div>
         </div>
@@ -188,12 +188,12 @@ const UPLOAD_PRESET = "recuerdos_preset";
         <div class="flex gap-3 mt-6">
           <button
             id="cancel-btn"
-            class="w-1/2 py-3 rounded-xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 active:scale-95 transition-all cursor-pointer"
+            class="w-1/2 py-3 rounded-xl border border-ink/10 text-taupe text-sm font-medium hover:bg-parchment active:scale-95 transition-all cursor-pointer"
             >Cancelar</button
           >
           <button
             id="continue-btn"
-            class="w-1/2 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-sm font-medium transition-all shadow-sm cursor-pointer"
+            class="w-1/2 py-3 rounded-xl bg-rose hover:bg-rose-dark active:scale-95 text-white text-sm font-medium transition-all shadow-sm cursor-pointer"
             >Elegir Foto / Video 📸</button
           >
         </div>
@@ -213,13 +213,13 @@ const UPLOAD_PRESET = "recuerdos_preset";
       todosLosRecuerdos.length === 0 && (
         <div
           id="empty-state"
-          class="text-center py-12 px-6 bg-amber-50/40 rounded-3xl border border-dashed border-amber-200/80 mt-8"
+          class="text-center py-12 px-6 bg-rose/10 rounded-3xl border border-dashed border-rose/40 mt-8"
         >
           <span class="text-4xl inline-block animate-pulse">📸</span>
-          <h3 class="text-lg font-bold text-stone-800 mt-2">
+          <h3 class="text-lg font-bold text-ink mt-2">
             Aún no hay recuerdos aquí
           </h3>
-          <p class="text-stone-500 text-xs sm:text-sm mt-1 max-w-sm mx-auto leading-relaxed">
+          <p class="text-taupe text-xs sm:text-sm mt-1 max-w-sm mx-auto leading-relaxed">
             Toca el botón <strong>"Subir nuevo recuerdo"</strong> para agregar
             las primeras fotos o videos especiales.
           </p>
@@ -230,15 +230,15 @@ const UPLOAD_PRESET = "recuerdos_preset";
     <!-- 💌 SECCIÓN DEL MENSAJE FINAL EDITABLE/BORRABLE -->
     <div
       id="final-message-container"
-      class={`mt-12 md:mt-16 p-6 sm:p-8 bg-amber-50/70 rounded-3xl border border-amber-200/60 text-center relative shadow-xs ${!finalMessage ? "hidden" : ""}`}
+      class={`mt-12 md:mt-16 p-6 sm:p-8 bg-rose/10 rounded-3xl border border-rose/30 text-center relative shadow-xs ${!finalMessage ? "hidden" : ""}`}
     >
       <span class="text-3xl">🕊️</span>
-      <h3 class="text-lg sm:text-xl font-bold text-amber-900 mt-2 mb-3">
+      <h3 class="text-lg sm:text-xl font-bold text-rose-dark mt-2 mb-3">
         Mensaje Especial
       </h3>
       <p
         id="final-message-text"
-        class="text-stone-700 italic text-sm md:text-base leading-relaxed max-w-xl mx-auto"
+        class="text-ink italic text-sm md:text-base leading-relaxed max-w-xl mx-auto"
       >
         {finalMessage}
       </p>
@@ -246,12 +246,12 @@ const UPLOAD_PRESET = "recuerdos_preset";
       <div class="mt-6 flex flex-wrap justify-center gap-2 sm:gap-3">
         <button
           id="edit-msg-btn"
-          class="text-xs bg-white text-amber-900 px-4 py-2.5 rounded-full border border-amber-200/80 hover:bg-amber-100/80 transition-all shadow-2xs font-medium cursor-pointer active:scale-95"
+          class="text-xs bg-paper text-rose-dark px-4 py-2.5 rounded-full border border-rose/30 hover:bg-rose/15 transition-all shadow-2xs font-medium cursor-pointer active:scale-95"
           >✏️ Editar mensaje</button
         >
         <button
           id="delete-msg-btn"
-          class="text-xs bg-white text-rose-700 px-4 py-2.5 rounded-full border border-rose-200/80 hover:bg-rose-50 transition-all shadow-2xs font-medium cursor-pointer active:scale-95"
+          class="text-xs bg-paper text-rose-700 px-4 py-2.5 rounded-full border border-rose-200/80 hover:bg-rose-50 transition-all shadow-2xs font-medium cursor-pointer active:scale-95"
           >🗑️ Borrar mensaje</button
         >
       </div>
@@ -264,7 +264,7 @@ const UPLOAD_PRESET = "recuerdos_preset";
     >
       <button
         id="restore-msg-btn"
-        class="text-xs sm:text-sm text-stone-500 hover:text-amber-700 underline underline-offset-4 cursor-pointer font-medium"
+        class="text-xs sm:text-sm text-taupe hover:text-rose-dark underline underline-offset-4 cursor-pointer font-medium"
         >➕ Agregar un mensaje de despedida/dedicatoria</button
       >
     </div>
@@ -276,14 +276,14 @@ const UPLOAD_PRESET = "recuerdos_preset";
     class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden transition-all duration-300"
   >
     <div
-      class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-stone-100 relative"
+      class="bg-paper rounded-3xl p-6 sm:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-ink/5 relative"
     >
       <div class="text-center mb-4">
         <span id="prompt-icon" class="text-3xl">✏️</span>
-        <h3 id="prompt-title" class="text-xl font-bold text-stone-800 mt-1">
+        <h3 id="prompt-title" class="text-xl font-bold text-ink mt-1">
           Editar información
         </h3>
-        <p id="prompt-subtitle" class="text-stone-500 text-xs sm:text-sm mt-1">
+        <p id="prompt-subtitle" class="text-taupe text-xs sm:text-sm mt-1">
           Escribe los nuevos datos a continuación:
         </p>
       </div>
@@ -292,19 +292,19 @@ const UPLOAD_PRESET = "recuerdos_preset";
         <textarea
           id="prompt-input"
           rows="3"
-          class="w-full px-4 py-3 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 resize-none transition-all"
+          class="w-full px-4 py-3 rounded-xl border border-ink/10 text-sm focus:outline-none focus:ring-2 focus:ring-rose/50 focus:border-rose resize-none transition-all"
         ></textarea>
       </div>
 
       <div class="flex gap-3 mt-6">
         <button
           id="prompt-cancel-btn"
-          class="w-1/2 py-3 rounded-xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 active:scale-95 transition-all cursor-pointer"
+          class="w-1/2 py-3 rounded-xl border border-ink/10 text-taupe text-sm font-medium hover:bg-parchment active:scale-95 transition-all cursor-pointer"
           >Cancelar</button
         >
         <button
           id="prompt-save-btn"
-          class="w-1/2 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-sm font-medium transition-all shadow-sm cursor-pointer"
+          class="w-1/2 py-3 rounded-xl bg-rose hover:bg-rose-dark active:scale-95 text-white text-sm font-medium transition-all shadow-sm cursor-pointer"
           >Guardar ✨</button
         >
       </div>
@@ -317,15 +317,15 @@ const UPLOAD_PRESET = "recuerdos_preset";
     class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden transition-all duration-300"
   >
     <div
-      class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-stone-100 text-center relative"
+      class="bg-paper rounded-3xl p-6 sm:p-8 max-w-sm w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-ink/5 text-center relative"
     >
       <span class="text-4xl">🗑️</span>
-      <h3 id="confirm-title" class="text-xl font-bold text-stone-800 mt-2">
+      <h3 id="confirm-title" class="text-xl font-bold text-ink mt-2">
         ¿Estás segura?
       </h3>
       <p
         id="confirm-subtitle"
-        class="text-stone-500 text-xs sm:text-sm mt-2 leading-relaxed"
+        class="text-taupe text-xs sm:text-sm mt-2 leading-relaxed"
       >
         Esta acción ocultará el mensaje especial de despedida de esta página.
       </p>
@@ -333,7 +333,7 @@ const UPLOAD_PRESET = "recuerdos_preset";
       <div class="flex gap-3 mt-6">
         <button
           id="confirm-cancel-btn"
-          class="w-1/2 py-3 rounded-xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 active:scale-95 transition-all cursor-pointer"
+          class="w-1/2 py-3 rounded-xl border border-ink/10 text-taupe text-sm font-medium hover:bg-parchment active:scale-95 transition-all cursor-pointer"
           >Cancelar</button
         >
         <button
@@ -346,11 +346,11 @@ const UPLOAD_PRESET = "recuerdos_preset";
   </div>
 
   <!-- Zona de peligro: eliminar esta página por completo -->
-  <div class="max-w-md mx-auto mt-16 mb-8 px-4 text-center">
-    <div class="w-12 h-px bg-stone-200 mx-auto mb-6"></div>
+  <div class="max-w-md mx-auto mt-16 mb-24 px-4 text-center">
+    <div class="w-12 h-px bg-ink/10 mx-auto mb-6"></div>
     {
       esMascotaDelCodigo ? (
-        <p class="text-stone-400 text-xs leading-relaxed">
+        <p class="text-taupe/70 text-xs leading-relaxed">
           Esta página viene fija en el código del sitio, así que no se puede
           eliminar desde aquí. Si de verdad quieres quitarla, hay que editarla
           directo en el proyecto.
@@ -358,7 +358,7 @@ const UPLOAD_PRESET = "recuerdos_preset";
       ) : (
         <button
           id="delete-pet-btn"
-          class="text-stone-400 hover:text-red-600 text-xs font-medium transition-colors cursor-pointer underline underline-offset-2"
+          class="text-taupe/70 hover:text-red-600 text-xs font-medium transition-colors cursor-pointer underline underline-offset-2"
         >
           Eliminar esta página para siempre
         </button>
@@ -623,7 +623,7 @@ const UPLOAD_PRESET = "recuerdos_preset";
 
                     const newCard = document.createElement("div");
                     newCard.className =
-                      "memory-card relative bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden animate-in fade-in zoom-in duration-300";
+                      "memory-card relative bg-paper rounded-2xl shadow-sm border border-ink/5 overflow-hidden animate-in fade-in zoom-in duration-300";
                     newCard.dataset.memoryId = nuevoId;
                     newCard.innerHTML = `
                       <button type="button" class="delete-memory-btn absolute top-2 right-2 z-10 bg-stone-900/60 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all cursor-pointer active:scale-95" title="Borrar este recuerdo" aria-label="Borrar este recuerdo">🗑️</button>
@@ -631,9 +631,9 @@ const UPLOAD_PRESET = "recuerdos_preset";
                         ${isVideo ? `<video src="${mediaUrl}" controls class="w-full h-full object-cover"></video>` : `<img src="${mediaUrl}" class="w-full h-full object-cover" />`}
                       </div>
                       <div class="p-5 sm:p-6">
-                        <span class="text-xs font-semibold text-amber-600/80 tracking-wide uppercase">${fechaActual}</span>
-                        <h3 class="text-lg sm:text-xl font-bold text-stone-800 mt-1 mb-2">${nuevoRecuerdo.title}</h3>
-                        <p class="text-stone-600 text-xs sm:text-sm leading-relaxed">${nuevoRecuerdo.description}</p>
+                        <span class="text-xs font-semibold text-rose/80 tracking-wide uppercase">${fechaActual}</span>
+                        <h3 class="text-lg sm:text-xl font-bold text-ink mt-1 mb-2">${nuevoRecuerdo.title}</h3>
+                        <p class="text-taupe text-xs sm:text-sm leading-relaxed">${nuevoRecuerdo.description}</p>
                       </div>
                     `;
                     if (grid) grid.insertBefore(newCard, grid.firstChild);
